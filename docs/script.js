@@ -18,26 +18,47 @@ document.addEventListener("DOMContentLoaded", () => {
     let canPressSpacebar = true; // Let user press spacebar IMMEDIATELY!
 
     // Helper to play a video reliably (handles autoplay restrictions and errors)
-    async function safePlay(video, { mute = true } = {}) {
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const loadingText = document.getElementById("loading-text");
+
+    function showLoading(text) {
+        if (!loadingOverlay) return;
+        if (loadingText) loadingText.innerText = text || "Loading...";
+        loadingOverlay.hidden = false;
+        loadingOverlay.style.pointerEvents = "auto";
+    }
+
+    function hideLoading() {
+        if (!loadingOverlay) return;
+        loadingOverlay.hidden = true;
+        loadingOverlay.style.pointerEvents = "none";
+    }
+
+    async function safePlay(video, { mute = true, label = "video" } = {}) {
         if (!video) return;
+        showLoading(`Starting ${label}...`);
+
         try {
             video.muted = mute;
             video.currentTime = 0;
             video.load();
             const promise = video.play();
+
             if (promise && promise.catch) {
                 await promise.catch(err => {
-                    console.warn("Video play rejected", err);
+                    console.warn(`safePlay ${label} rejected`, err);
                 });
             }
-            // Optionally unmute after a short delay if requested
+
             if (!mute) {
                 setTimeout(() => {
-                    try { video.muted = false; } catch (e) { /* ignore */ }
+                    try { video.muted = false; } catch (e) { }
                 }, 300);
             }
         } catch (err) {
-            console.warn("safePlay error", err);
+            console.warn(`safePlay ${label} error`, err);
+        } finally {
+            setTimeout(hideLoading, 250);
         }
     }
 
@@ -166,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
             whyVid.volume = 1.0; 
             
             // Re-load and play to ensure no freeze
-            await safePlay(whyVid, { mute: false });
+            await safePlay(whyVid, { mute: false, label: 'WHY video' });
 
             // Start Audio Fade In logic (Very slow transition)
             localAudio.volume = 0;
@@ -212,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         schoolVid.style.visibility = "visible";
 
                         schoolVid.classList.add("active");
-                        await safePlay(schoolVid, { mute: true });
+                        await safePlay(schoolVid, { mute: true, label: 'SCHOOL video' });
 
                         // Optional debug overlay (will show briefly)
                         const debugLabel = document.createElement("div");
@@ -244,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 schoolVid.pause();
 
                                 craycrayVid.classList.add("active");
-                                await safePlay(craycrayVid, { mute: true });
+                                await safePlay(craycrayVid, { mute: true, label: 'CRAYCRAY video' });
 
                                 // Séquence terminée : on s'arrête là après la vidéo
                                 craycrayVid.addEventListener('ended', () => {
@@ -395,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                             }
 
 // Preload and play reliably
-                                                await safePlay(finaleVid, { mute: finaleVid.muted });
+                                                await safePlay(finaleVid, { mute: finaleVid.muted, label: 'Finale video' });
 
                                             function showCredits() {
                                                 stageFinale.classList.remove("active");
