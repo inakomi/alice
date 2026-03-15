@@ -32,19 +32,84 @@ document.addEventListener("DOMContentLoaded", () => {
         resize();
         window.addEventListener("resize", resize);
 
+        // Steampunk-inspired radial audio visualizer
+        const centerX = audioCanvas.width / 2;
+        const centerY = audioCanvas.height / 2;
+        const maxRadius = Math.min(centerX, centerY) * 0.8;
+        let rotation = 0;
+
+        // Steam particles
+        const steamParticles = Array.from({ length: 60 }, () => ({
+            x: centerX,
+            y: centerY,
+            r: Math.random() * 2 + 1,
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.3 + Math.random() * 0.6,
+            alpha: 0.2 + Math.random() * 0.4
+        }));
+
         function draw() {
             analyser.getByteFrequencyData(dataArray);
             ctx.clearRect(0, 0, audioCanvas.width, audioCanvas.height);
-            const barCount = 60;
-            const barWidth = audioCanvas.width / barCount;
+
+            // Background glow
+            const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius);
+            bgGradient.addColorStop(0, "rgba(0, 12, 22, 0.75)");
+            bgGradient.addColorStop(1, "rgba(0, 0, 0, 1)");
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, audioCanvas.width, audioCanvas.height);
+
+            // Draw steam particles
+            steamParticles.forEach(p => {
+                p.angle += 0.002;
+                p.y -= p.speed;
+                p.x += Math.sin(p.angle) * 0.2;
+                p.alpha -= 0.002;
+                if (p.alpha <= 0 || p.y < centerY - maxRadius * 1.1) {
+                    p.x = centerX + (Math.random() - 0.5) * maxRadius * 0.4;
+                    p.y = centerY + maxRadius * 0.6;
+                    p.alpha = 0.2 + Math.random() * 0.4;
+                }
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(150, 220, 255, ${p.alpha})`;
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw radial bars like gears
+            const barCount = 64;
+            const angleStep = (Math.PI * 2) / barCount;
+            rotation += 0.004;
             for (let i = 0; i < barCount; i++) {
                 const value = dataArray[Math.floor(i * dataArray.length / barCount)];
-                const percent = value / 255;
-                const height = audioCanvas.height * percent;
-                const x = i * barWidth;
-                ctx.fillStyle = `rgba(40,200,255,${0.3 + percent * 0.7})`;
-                ctx.fillRect(x, audioCanvas.height - height, barWidth * 0.8, height);
+                const intensity = value / 255;
+                const innerRadius = maxRadius * 0.4;
+                const outerRadius = innerRadius + intensity * maxRadius * 0.4;
+                const angle = i * angleStep + rotation;
+
+                const gradient = ctx.createLinearGradient(
+                    centerX + Math.cos(angle) * innerRadius,
+                    centerY + Math.sin(angle) * innerRadius,
+                    centerX + Math.cos(angle) * outerRadius,
+                    centerY + Math.sin(angle) * outerRadius
+                );
+                gradient.addColorStop(0, "rgba(30, 90, 180, 0.6)");
+                gradient.addColorStop(1, "rgba(100, 220, 255, 0.9)");
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 4 + intensity * 8;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (innerRadius + outerRadius) / 2, angle - angleStep * 0.4, angle + angleStep * 0.4);
+                ctx.stroke();
             }
+
+            // Outer gear ring
+            ctx.strokeStyle = "rgba(100, 210, 255, 0.25)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * 0.9, 0, Math.PI * 2);
+            ctx.stroke();
+
             audioVizRAF = requestAnimationFrame(draw);
         }
 
