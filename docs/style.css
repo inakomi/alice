@@ -495,6 +495,27 @@ body {
     visibility: visible;
 }
 
+#audio-wave-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+.wave-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 1;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 15px rgba(0,0,0,0.7);
+}
+
 .dramatic-bold {
     font-size: 8vw;
     font-weight: 900;

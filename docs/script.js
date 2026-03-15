@@ -16,7 +16,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let canPressSpacebar = true; // Let user press spacebar IMMEDIATELY!
-    
+
+    // Waveform visualizer (before the finale video)
+    const waveCanvas = document.getElementById("audio-wave-canvas");
+    const waveStage = document.getElementById("final-stage-wave");
+    let waveCtx, waveAnalyser, waveData, waveRAF, waveAudioCtx;
+
+    function initWaveForm() {
+        if (!waveCanvas || !localAudio || waveAudioCtx) return;
+        waveAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = waveAudioCtx.createMediaElementSource(localAudio);
+        waveAnalyser = waveAudioCtx.createAnalyser();
+        waveAnalyser.fftSize = 2048;
+        source.connect(waveAnalyser);
+        waveAnalyser.connect(waveAudioCtx.destination);
+
+        waveData = new Uint8Array(waveAnalyser.fftSize);
+        waveCtx = waveCanvas.getContext("2d");
+
+        function resize() {
+            const rect = waveCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            waveCanvas.width = rect.width * dpr;
+            waveCanvas.height = rect.height * dpr;
+            waveCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resize();
+        window.addEventListener("resize", resize);
+    }
+
+    function startWaveform(durationMs = 5000) {
+        if (!waveCtx || !waveAnalyser) initWaveForm();
+        if (!waveCtx || !waveAnalyser) return Promise.resolve();
+
+        waveAnalyser.getByteTimeDomainData(waveData);
+
+        const w = waveCanvas.clientWidth;
+        const h = waveCanvas.clientHeight;
+
+        function draw() {
+            waveAnalyser.getByteTimeDomainData(waveData);
+            waveCtx.clearRect(0, 0, w, h);
+
+            const gradient = waveCtx.createLinearGradient(0, 0, w, h);
+            gradient.addColorStop(0, "rgba(0, 255, 255, 0.2)");
+            gradient.addColorStop(0.5, "rgba(0, 100, 255, 0.4)");
+            gradient.addColorStop(1, "rgba(160, 0, 255, 0.2)");
+            waveCtx.fillStyle = gradient;
+            waveCtx.fillRect(0, 0, w, h);
+
+            const midY = h / 2;
+            const amp = h * 0.25;
+
+            for (let layer = 0; layer < 4; layer++) {
+                const offset = layer * 15;
+                const alpha = 0.2 + (4 - layer) * 0.15;
+                waveCtx.strokeStyle = `rgba(160, 255, 255, ${alpha})`;
+                waveCtx.lineWidth = 2 + (4 - layer);
+                waveCtx.beginPath();
+                for (let i = 0; i < w; i += 4) {
+                    const idx = Math.floor((i / w) * waveData.length);
+                    const value = (waveData[idx] - 128) / 128;
+                    const y = midY + value * amp + Math.sin((i * 0.02) + performance.now() * 0.002 + layer) * 12;
+                    if (i === 0) waveCtx.moveTo(i, y + offset);
+                    else waveCtx.lineTo(i, y + offset);
+                }
+                waveCtx.stroke();
+            }
+
+            waveRAF = requestAnimationFrame(draw);
+        }
+
+        return new Promise(resolve => {
+            waveStage.classList.add("active");
+            if (waveAudioCtx.state === "suspended") waveAudioCtx.resume();
+            draw();
+            setTimeout(() => {
+                cancelAnimationFrame(waveRAF);
+                waveStage.classList.remove("active");
+                waveCtx.clearRect(0, 0, w, h);
+                resolve();
+            }, durationMs);
+        });
+    }
+
     // Spacebar logic
     document.addEventListener("keydown", (e) => {
         if (e.code === "Space" && canPressSpacebar) {
@@ -255,7 +338,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     // NEW: Finale Video and Credits
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
-                                        setTimeout(() => {
+                                        setTimeout(async () => {
+                                            // Show waveform animation that reacts to the audio
+                                            await startWaveform(5200);
+
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
                                             const stageCredits = document.getElementById("final-stage-credits");
