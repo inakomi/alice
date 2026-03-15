@@ -17,6 +17,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let canPressSpacebar = true; // Let user press spacebar IMMEDIATELY!
 
+    // Helper to play a video reliably (handles autoplay restrictions and errors)
+    async function safePlay(video, { mute = true } = {}) {
+        if (!video) return;
+        try {
+            video.muted = mute;
+            video.currentTime = 0;
+            video.load();
+            const promise = video.play();
+            if (promise && promise.catch) {
+                await promise.catch(err => {
+                    console.warn("Video play rejected", err);
+                });
+            }
+            // Optionally unmute after a short delay if requested
+            if (!mute) {
+                setTimeout(() => {
+                    try { video.muted = false; } catch (e) { /* ignore */ }
+                }, 300);
+            }
+        } catch (err) {
+            console.warn("safePlay error", err);
+        }
+    }
+
     // Waveform visualizer (before the finale video)
     const waveCanvas = document.getElementById("audio-wave-canvas");
     const waveStage = document.getElementById("final-stage-wave");
@@ -142,8 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
             whyVid.volume = 1.0; 
             
             // Re-load and play to ensure no freeze
-            whyVid.load();
-            whyVid.play().catch(e => console.log("Why video play error:", e));
+            await safePlay(whyVid, { mute: false });
 
             // Start Audio Fade In logic (Very slow transition)
             localAudio.volume = 0;
@@ -189,8 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         schoolVid.style.visibility = "visible";
 
                         schoolVid.classList.add("active");
-                        schoolVid.load();
-                        schoolVid.play().catch(e => console.log("School video play error:", e));
+                        await safePlay(schoolVid, { mute: true });
 
                         // Optional debug overlay (will show briefly)
                         const debugLabel = document.createElement("div");
@@ -222,8 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 schoolVid.pause();
 
                                 craycrayVid.classList.add("active");
-                                craycrayVid.load();
-                                craycrayVid.play();
+                                await safePlay(craycrayVid, { mute: true });
 
                                 // Séquence terminée : on s'arrête là après la vidéo
                                 craycrayVid.addEventListener('ended', () => {
@@ -373,16 +394,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                                 finaleVid.muted = false;
                                             }
 
-                                            // Preload and fix potential freeze
-                                            finaleVid.load();
-                                            const playPromise = finaleVid.play();
-
-                                            if (playPromise !== undefined) {
-                                                playPromise.catch(error => {
-                                                    console.log("Finale play stalled, skipping to explanations");
-                                                    showCredits();
-                                                });
-                                            }
+// Preload and play reliably
+                                                await safePlay(finaleVid, { mute: finaleVid.muted });
 
                                             function showCredits() {
                                                 stageFinale.classList.remove("active");
