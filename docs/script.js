@@ -6,123 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const takeChainsBtn = document.getElementById("take-chains-btn");
     const localAudio = document.getElementById("local-audio");
 
-    // Audio visualizer (used before the finale video)
-    const audioCanvas = document.getElementById("audio-visualizer");
-    const audioStage = document.getElementById("final-stage-audio");
-    let audioCtx, analyser, dataArray, audioVizRAF;
-
-    function setupAudioVisualizer() {
-        if (!audioCanvas || !localAudio) return;
-        if (audioCtx) return; // already set up
-
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioCtx.createMediaElementSource(localAudio);
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 1024;
-        source.connect(analyser);
-        analyser.connect(audioCtx.destination);
-
-        const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-        const timeArray = new Uint8Array(bufferLength);
-
-        const ctx = audioCanvas.getContext("2d");
-        let width = 0;
-        let height = 0;
-
-        const particles = Array.from({ length: 120 }, (_, i) => ({
-            angle: (i / 120) * Math.PI * 2,
-            speed: 0.002 + Math.random() * 0.003,
-            size: 1.0 + Math.random() * 2.5
-        }));
-
-        function resize() {
-            const rect = audioCanvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            width = Math.floor(rect.width * dpr);
-            height = Math.floor(rect.height * dpr);
-            audioCanvas.width = width;
-            audioCanvas.height = height;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-        resize();
-        window.addEventListener("resize", resize);
-
-        function draw() {
-            analyser.getByteFrequencyData(dataArray);
-            analyser.getByteTimeDomainData(timeArray);
-
-            // Trail effect
-            ctx.fillStyle = "rgba(0, 0, 0, 0.14)";
-            ctx.fillRect(0, 0, width, height);
-
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const maxRadius = Math.min(width, height) * 0.4;
-
-            // Bass energy drives glow intensity
-            const bassCount = Math.floor(bufferLength * 0.1);
-            const bassEnergy = dataArray.slice(0, bassCount).reduce((sum, v) => sum + v, 0) / (bassCount * 255);
-            const bassBoost = Math.min(1, bassEnergy * 1.8);
-
-            // Radial glow
-            const glow = ctx.createRadialGradient(centerX, centerY, maxRadius * 0.12, centerX, centerY, maxRadius * 1.1);
-            glow.addColorStop(0, `rgba(40, 220, 255, ${0.25 + bassBoost * 0.35})`);
-            glow.addColorStop(0.6, "rgba(10, 10, 24, 0.15)");
-            glow.addColorStop(1, "rgba(0, 0, 0, 0)");
-            ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 1.05, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Waveform ring
-            ctx.strokeStyle = `rgba(225, 250, 255, ${0.35 + bassBoost * 0.45})`;
-            ctx.lineWidth = 2 + bassBoost * 3;
-            ctx.beginPath();
-            for (let i = 0; i < bufferLength; i += 5) {
-                const theta = (i / bufferLength) * Math.PI * 2;
-                const norm = (timeArray[i] - 128) / 128;
-                const radius = maxRadius * 0.38 + norm * maxRadius * 0.18;
-                const x = centerX + Math.cos(theta) * radius;
-                const y = centerY + Math.sin(theta) * radius;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.stroke();
-
-            // Particles orbiting with frequency energy
-            particles.forEach(p => {
-                p.angle += p.speed + bassBoost * 0.01;
-                const idx = Math.floor((p.angle % (Math.PI * 2)) / (Math.PI * 2) * bufferLength);
-                const energy = dataArray[idx] / 255;
-                const radius = maxRadius * 0.65 + energy * maxRadius * 0.25;
-                const x = centerX + Math.cos(p.angle) * radius;
-                const y = centerY + Math.sin(p.angle) * radius;
-                const alpha = 0.18 + energy * 0.6;
-                ctx.fillStyle = `rgba(80, 230, 255, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(x, y, p.size + energy * 3.5, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // Center pulse
-            const centerPulse = 1 + bassBoost * 0.5;
-            ctx.fillStyle = `rgba(255,255,255,${0.2 + bassBoost * 0.4})`;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.12 * centerPulse, 0, Math.PI * 2);
-            ctx.fill();
-
-            audioVizRAF = requestAnimationFrame(draw);
-        }
-
-        return {
-            start: () => { if (audioCtx.state === "suspended") audioCtx.resume(); draw(); },
-            stop: () => { if (audioVizRAF) cancelAnimationFrame(audioVizRAF); ctx.clearRect(0, 0, width, height); }
-        };
-    }
-
-    let audioVisualizer;
 
     // Start video 1
     if (introVid1) {
@@ -373,59 +256,46 @@ document.addEventListener("DOMContentLoaded", () => {
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
                                         setTimeout(() => {
-                                            const stageAudio = document.getElementById("final-stage-audio");
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
                                             const stageCredits = document.getElementById("final-stage-credits");
 
-                                            // Show audio reactive animation phase
-                                            stageAudio.classList.add("active");
-                                            if (!audioVisualizer) audioVisualizer = setupAudioVisualizer();
-                                            audioVisualizer?.start();
+                                            stageFinale.classList.add("active");
 
-                                            setTimeout(() => {
-                                                stageAudio.classList.remove("active");
-                                                audioVisualizer?.stop();
+                                            // Handle Audio logic for finale
+                                            if (!localAudio.paused && localAudio.volume > 0) {
+                                                finaleVid.muted = true;
+                                            } else {
+                                                finaleVid.muted = false;
+                                            }
 
-                                                // Now show the finale video
-                                                stageFinale.classList.add("active");
+                                            // Preload and fix potential freeze
+                                            finaleVid.load();
+                                            const playPromise = finaleVid.play();
 
-                                                // Handle Audio logic for finale
-                                                if (!localAudio.paused && localAudio.volume > 0) {
-                                                    finaleVid.muted = true;
-                                                } else {
-                                                    finaleVid.muted = false;
-                                                }
+                                            if (playPromise !== undefined) {
+                                                playPromise.catch(error => {
+                                                    console.log("Finale play stalled, skipping to explanations");
+                                                    showCredits();
+                                                });
+                                            }
 
-                                                // Preload and fix potential freeze
-                                                finaleVid.load(); 
-                                                const playPromise = finaleVid.play();
-
-                                                if (playPromise !== undefined) {
-                                                    playPromise.catch(error => {
-                                                        console.log("Finale play stalled, skipping to explanations");
-                                                        showCredits();
-                                                    });
-                                                }
-
-                                                function showCredits() {
-                                                    stageFinale.classList.remove("active");
-                                                    finaleVid.pause();
-                                                    setTimeout(() => {
-                                                        stageCredits.classList.add("active");
-                                                    }, 500); // reduced from 1000
-                                                }
-
-                                                finaleVid.onended = showCredits;
-
-                                                // Safety: if video is longer than 2 mins or freezes
+                                            function showCredits() {
+                                                stageFinale.classList.remove("active");
+                                                finaleVid.pause();
                                                 setTimeout(() => {
-                                                    if (!stageCredits.classList.contains("active")) {
-                                                        showCredits();
-                                                    }
-                                                }, 60000); // 1 minute safety cap
+                                                    stageCredits.classList.add("active");
+                                                }, 500); // reduced from 1000
+                                            }
 
-                                            }, 4500); // show audio stage for ~4.5s
+                                            finaleVid.onended = showCredits;
+
+                                            // Safety: if video is longer than 2 mins or freezes
+                                            setTimeout(() => {
+                                                if (!stageCredits.classList.contains("active")) {
+                                                    showCredits();
+                                                }
+                                            }, 60000); // 1 minute safety cap
 
                                         }, 500); // reduced from 1000
                                     }, 4000); // Philosophy stays for 4s instead of 6s
