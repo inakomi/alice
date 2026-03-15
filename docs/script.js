@@ -6,6 +6,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const takeChainsBtn = document.getElementById("take-chains-btn");
     const localAudio = document.getElementById("local-audio");
 
+    // Audio visualizer (used before the finale video)
+    const audioCanvas = document.getElementById("audio-visualizer");
+    const audioStage = document.getElementById("final-stage-audio");
+    let audioCtx, analyser, dataArray, audioVizRAF;
+
+    function setupAudioVisualizer() {
+        if (!audioCanvas || !localAudio) return;
+        if (audioCtx) return; // already set up
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaElementSource(localAudio);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const ctx = audioCanvas.getContext("2d");
+        function resize() {
+            audioCanvas.width = audioCanvas.offsetWidth;
+            audioCanvas.height = audioCanvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        function draw() {
+            analyser.getByteFrequencyData(dataArray);
+            ctx.clearRect(0, 0, audioCanvas.width, audioCanvas.height);
+            const barCount = 60;
+            const barWidth = audioCanvas.width / barCount;
+            for (let i = 0; i < barCount; i++) {
+                const value = dataArray[Math.floor(i * dataArray.length / barCount)];
+                const percent = value / 255;
+                const height = audioCanvas.height * percent;
+                const x = i * barWidth;
+                ctx.fillStyle = `rgba(40,200,255,${0.3 + percent * 0.7})`;
+                ctx.fillRect(x, audioCanvas.height - height, barWidth * 0.8, height);
+            }
+            audioVizRAF = requestAnimationFrame(draw);
+        }
+
+        return { start: () => { if (audioCtx.state === "suspended") audioCtx.resume(); draw(); },
+                 stop: () => { if (audioVizRAF) cancelAnimationFrame(audioVizRAF); ctx.clearRect(0, 0, audioCanvas.width, audioCanvas.height); } };
+    }
+
+    let audioVisualizer;
+
     // Start video 1
     if (introVid1) {
         introVid1.addEventListener("ended", () => {
@@ -255,46 +303,59 @@ document.addEventListener("DOMContentLoaded", () => {
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
                                         setTimeout(() => {
+                                            const stageAudio = document.getElementById("final-stage-audio");
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
                                             const stageCredits = document.getElementById("final-stage-credits");
-                                            
-                                            stageFinale.classList.add("active");
-                                            
-                                            // Handle Audio logic for finale
-                                            if (!localAudio.paused && localAudio.volume > 0) {
-                                                finaleVid.muted = true;
-                                            } else {
-                                                finaleVid.muted = false;
-                                            }
-                                            
-                                            // Preload and fix potential freeze
-                                            finaleVid.load(); 
-                                            const playPromise = finaleVid.play();
-                                            
-                                            if (playPromise !== undefined) {
-                                                playPromise.catch(error => {
-                                                    console.log("Finale play stalled, skipping to explanations");
-                                                    showCredits();
-                                                });
-                                            }
 
-                                            function showCredits() {
-                                                stageFinale.classList.remove("active");
-                                                finaleVid.pause();
-                                                setTimeout(() => {
-                                                    stageCredits.classList.add("active");
-                                                }, 500); // reduced from 1000
-                                            }
-                                            
-                                            finaleVid.onended = showCredits;
+                                            // Show audio reactive animation phase
+                                            stageAudio.classList.add("active");
+                                            if (!audioVisualizer) audioVisualizer = setupAudioVisualizer();
+                                            audioVisualizer?.start();
 
-                                            // Safety: if video is longer than 2 mins or freezes
                                             setTimeout(() => {
-                                                if (!stageCredits.classList.contains("active")) {
-                                                    showCredits();
+                                                stageAudio.classList.remove("active");
+                                                audioVisualizer?.stop();
+
+                                                // Now show the finale video
+                                                stageFinale.classList.add("active");
+
+                                                // Handle Audio logic for finale
+                                                if (!localAudio.paused && localAudio.volume > 0) {
+                                                    finaleVid.muted = true;
+                                                } else {
+                                                    finaleVid.muted = false;
                                                 }
-                                            }, 60000); // 1 minute safety cap
+
+                                                // Preload and fix potential freeze
+                                                finaleVid.load(); 
+                                                const playPromise = finaleVid.play();
+
+                                                if (playPromise !== undefined) {
+                                                    playPromise.catch(error => {
+                                                        console.log("Finale play stalled, skipping to explanations");
+                                                        showCredits();
+                                                    });
+                                                }
+
+                                                function showCredits() {
+                                                    stageFinale.classList.remove("active");
+                                                    finaleVid.pause();
+                                                    setTimeout(() => {
+                                                        stageCredits.classList.add("active");
+                                                    }, 500); // reduced from 1000
+                                                }
+
+                                                finaleVid.onended = showCredits;
+
+                                                // Safety: if video is longer than 2 mins or freezes
+                                                setTimeout(() => {
+                                                    if (!stageCredits.classList.contains("active")) {
+                                                        showCredits();
+                                                    }
+                                                }, 60000); // 1 minute safety cap
+
+                                            }, 4500); // show audio stage for ~4.5s
 
                                         }, 500); // reduced from 1000
                                     }, 4000); // Philosophy stays for 4s instead of 6s
