@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.addEventListener("resize", resize);
     }
 
-    function startWaveform(durationMs = 5000) {
+    function startWaveform(durationMs = 9000) {
         if (!waveCtx || !waveAnalyser) initWaveForm();
         if (!waveCtx || !waveAnalyser) return Promise.resolve();
 
@@ -54,32 +54,50 @@ document.addEventListener("DOMContentLoaded", () => {
         const w = waveCanvas.clientWidth;
         const h = waveCanvas.clientHeight;
 
+        // Keep a small buffer of past samples for smoother motion
+        const history = new Array(60).fill(0);
+        let historyIdx = 0;
+
         function draw() {
             waveAnalyser.getByteTimeDomainData(waveData);
+
+            // Smooth the waveform by averaging nearby samples
+            for (let i = 0; i < waveData.length; i += 16) {
+                const base = waveData[i];
+                history[historyIdx] = base;
+                historyIdx = (historyIdx + 1) % history.length;
+            }
+
+            const avg = history.reduce((sum, v) => sum + v, 0) / history.length;
+            const bass = (avg - 128) / 128;
+
             waveCtx.clearRect(0, 0, w, h);
 
             const gradient = waveCtx.createLinearGradient(0, 0, w, h);
-            gradient.addColorStop(0, "rgba(0, 255, 255, 0.2)");
-            gradient.addColorStop(0.5, "rgba(0, 100, 255, 0.4)");
-            gradient.addColorStop(1, "rgba(160, 0, 255, 0.2)");
+            gradient.addColorStop(0, "rgba(0, 230, 255, 0.15)");
+            gradient.addColorStop(0.5, "rgba(60, 80, 220, 0.25)");
+            gradient.addColorStop(1, "rgba(160, 0, 255, 0.15)");
             waveCtx.fillStyle = gradient;
             waveCtx.fillRect(0, 0, w, h);
 
             const midY = h / 2;
-            const amp = h * 0.25;
+            const amp = h * (0.2 + Math.abs(bass) * 0.25);
 
-            for (let layer = 0; layer < 4; layer++) {
-                const offset = layer * 15;
-                const alpha = 0.2 + (4 - layer) * 0.15;
+            const time = performance.now() * 0.0005;
+
+            for (let layer = 0; layer < 5; layer++) {
+                const offset = (layer - 2) * 18;
+                const alpha = 0.12 + (5 - layer) * 0.14;
                 waveCtx.strokeStyle = `rgba(160, 255, 255, ${alpha})`;
-                waveCtx.lineWidth = 2 + (4 - layer);
+                waveCtx.lineWidth = 1 + (5 - layer) * 1.2;
                 waveCtx.beginPath();
-                for (let i = 0; i < w; i += 4) {
+                for (let i = 0; i < w; i += 6) {
                     const idx = Math.floor((i / w) * waveData.length);
                     const value = (waveData[idx] - 128) / 128;
-                    const y = midY + value * amp + Math.sin((i * 0.02) + performance.now() * 0.002 + layer) * 12;
-                    if (i === 0) waveCtx.moveTo(i, y + offset);
-                    else waveCtx.lineTo(i, y + offset);
+                    const wave = Math.sin(i * 0.01 + time * (0.6 + layer * 0.2)) * 18;
+                    const y = midY + value * amp + wave + offset * Math.sin(time * 0.5 + layer);
+                    if (i === 0) waveCtx.moveTo(i, y);
+                    else waveCtx.lineTo(i, y);
                 }
                 waveCtx.stroke();
             }
