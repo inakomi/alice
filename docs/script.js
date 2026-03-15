@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Spacebar logic
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", async (e) => {
         if (e.code === "Space" && canPressSpacebar) {
             canPressSpacebar = false; // Prevent multiple triggers
             console.log("Spacebar pressed: take away constraints");
@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     glitchName.setAttribute("data-text", "INES");
                     
                     // Stay on INES for 2 seconds then fade out to show school video
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         glitchReveal.classList.remove("active");
                         
                         const schoolVid = document.getElementById("school-vid");
@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             liesReveal.classList.add("active");
 
                             // Wait 5 seconds on the white text then show craycray video
-                            setTimeout(() => {
+                            setTimeout(async () => {
                                 liesReveal.classList.remove("active");
                                 
                                 const craycrayVid = document.getElementById("craycray-vid");
