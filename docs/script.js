@@ -80,9 +80,28 @@ document.addEventListener("DOMContentLoaded", () => {
                         whyVid.classList.remove("active");
                         whyVid.pause();
 
+                        // Ensure school video is ready to play
+                        schoolVid.muted = true;
+                        schoolVid.playsInline = true;
+                        schoolVid.currentTime = 0;
+                        schoolVid.style.visibility = "visible";
+
                         schoolVid.classList.add("active");
                         schoolVid.load();
-                        schoolVid.play();
+                        schoolVid.play().catch(e => console.log("School video play error:", e));
+
+                        // Optional debug overlay (will show briefly)
+                        const debugLabel = document.createElement("div");
+                        debugLabel.textContent = "SCHOOL VIDEO";
+                        debugLabel.style.position = "absolute";
+                        debugLabel.style.top = "1rem";
+                        debugLabel.style.left = "1rem";
+                        debugLabel.style.padding = "0.25rem 0.5rem";
+                        debugLabel.style.background = "rgba(0,0,0,0.6)";
+                        debugLabel.style.color = "#fff";
+                        debugLabel.style.zIndex = "6000";
+                        document.body.appendChild(debugLabel);
+                        setTimeout(() => debugLabel.remove(), 3000);
 
                         schoolVid.addEventListener('ended', () => {
                             const liesReveal = document.getElementById("lies-reveal");
