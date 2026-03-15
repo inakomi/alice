@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISUAL DISTORTION</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Hidden Audio Player -->
+    <audio id="local-audio" src="media/song.mp3" loop preload="auto"></audio>
+
+    <!-- Intro Cinematic Sequence -->
+    <div id="intro-cinematic" class="intro-cinematic">
+        <video id="intro-vid-1" class="intro-video active" src="media/intro.mp4" playsinline webkit-playsinline muted autoplay preload="auto"></video>
+        <video id="why-vid" class="intro-video" src="media/why.mp4" playsinline webkit-playsinline preload="auto"></video>
+        <video id="school-vid" class="intro-video" src="media/school.mp4" playsinline webkit-playsinline muted preload="auto"></video>
+        <video id="craycray-vid" class="intro-video" src="media/craycray.mp4" playsinline webkit-playsinline muted preload="auto"></video>
+        
+        <!-- Glitch Reveal Text -->
+        <div id="glitch-reveal" class="glitch-reveal">
+            <h1 id="glitch-name" class="glitch" data-text="ALICE">ALICE</h1>
+        </div>
+
+        <!-- Lies Reveal Text -->
+        <div id="lies-reveal" class="glitch-reveal">
+            <h1 id="lies-text">we chase misprinted lies</h1>
+        </div>
+
+        <!-- Alice Riddle Game Container -->
+        <div id="game-container" class="game-container">
+            <canvas id="game-canvas"></canvas>
+            
+            <div id="riddle-ui" class="riddle-ui">
+                <div class="riddle-text">
+                    <p>"I'm the man in the box,</p>
+                    <p>And I'm down in a hole, losing my soul.</p>
+                    <p>I'm a little girl alone in my room...</p>
+                    <p class="highlight">Who am I?"</p>
+                </div>
+                <input type="text" id="riddle-input" placeholder="..." autocomplete="off" spellcheck="false">
+                <div id="ticking-messages"></div>
+            </div>
+
+            <div id="victory-reveal" class="victory-reveal">
+                <div id="final-stage-1" class="final-stage active">
+                    <h1 class="dramatic-bold">New world unlocked</h1>
+                    <h2 class="cinematic-sub">We were never in chain</h2>
+                </div>
+                
+                <div id="final-stage-2" class="final-stage">
+                    <h1 class="dramatic-prompt">WHAT NOW?</h1>
+                    <div class="final-choices">
+                        <button id="btn-replay" class="choice-btn">we play another guessing</button>
+                        <button id="btn-stop" class="choice-btn">we stop</button>
+                    </div>
+                </div>
+
+                <div id="final-stage-dots" class="final-stage">
+                    <h1 class="dramatic-bold">...</h1>
+                </div>
+
+                <div id="final-stage-3" class="final-stage">
+                    <p class="philosophy-text">There is always another path...</p>
+                    <p class="philosophy-text highlighted">You choose your own chains.</p>
+                </div>
+
+                <div id="final-stage-finale" class="final-stage">
+                    <video id="finale-vid" class="finale-video" src="media/finale.mp4" playsinline muted></video>
+                </div>
+
+                <div id="final-stage-credits" class="final-stage">
+                    <div class="credits-scroll">
+                        <h1 class="credits-title">Explanations of the project</h1>
+                        
+                        <div class="credit-section">
+                            <h3>THE BLUE MONOCHROME</h3>
+                            <p>The choice of blue is a deliberate descent. It began as the innocent color of Alice's dress—a symbol of curiosity and childhood purity. But here, it has been consumed by the dark. It is now the electric blue of a waxy leaf in a lightless jungle, the cold hue of a stone tunnel, and the monochromatic lens through which we view our own isolation. It represents the damp, silent atmosphere where sunlight struggles to exist, mirroring the internal void we often navigate.</p>
+                        </div>
+
+                        <div class="credit-section">
+                            <h3>ALICE IN CHAINS (SENTIMENTAL)</h3>
+                            <p>This project is deeply rooted in a sentimental bond with the music of Alice in Chains. It is more than just a soundtrack; it is the emotional architecture of the entire experience. Their music accompanied my darkest and most reflective moments, creating a bridge between the surreal world of Wonderland and the gritty reality of human struggle. It's the sound of a carousel that has rusted over but still spins.</p>
+                        </div>
+
+                        <div class="credit-section">
+                            <h3>THE VOICE OF LAYNE STALEY</h3>
+                            <p>The voice of the main singer is perfectly represented here because it is a voice that sounds like it is coming from the very hole we just escaped. It is visceral, raw, and hauntingly beautiful. There is no other voice that could capture the feeling of being "trapped in a box" while simultaneously soaring with such tragic grace. It is the perfect sonic representation of the "man in the box" riddle—a soul that is losing itself but still screaming to be heard.</p>
+                        </div>
+
+                        <div class="credit-section">
+                            <h3>JUSTIFICATION: THE PATH</h3>
+                            <p>Every element was a choice. The "clock is ticking" was the anxiety of time slipping away. The glitching names were the fragments of an identity being rewritten. Ines, Alice... they are all reflections in the same cracked mirror. The "school" video was a memory of a structured past, now replaced by the chaotic freedom of the jungle. Ultimately, this journey justifies itself: you are the architect, and these are your chains.</p>
+                        </div>
+
+                        <p class="credits-footer">THANK YOU FOR EXPERIENCING THE PATH.<br>THE END.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="intro-text-seq" class="intro-text-seq">
+            <h1 class="dramatic-title">
+                <span class="line-1">A cinematic project by Ines Riffi,</span>
+                <span class="line-2">ALICE IN CHAINS</span>
+                <span class="line-3">to take away your chains press space bar</span>
+            </h1>
+        </div>
+        
+    </div>
+
+    <!-- Skip Button -->
+    <button id="skip-btn" class="skip-btn">SKIP INTRO</button>
+
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+
+    <!-- Intro Text Overlay -->
+    <div class="intro-overlay">
+        <h1 class="glitch" data-text="8 SECONDS">8 SECONDS</h1>
+        <p>SCROLL TO EXPERIENCE</p>
+    </div>
+
+    <!-- Divert / Unlock Overlay -->
+    <div id="divert-overlay" class="divert-overlay">
+        <h2 class="glitch" data-text="ACCESS DENIED" style="font-size: 5rem;">ACCESS DENIED</h2>
+        <p class="divert-text">WRITE THE CODE TO PROCEED</p>
+        <input type="text" id="divert-input" autocomplete="off" spellcheck="false" maxlength="2" autofocus>
+    </div>
+
+    <!-- Main Horizontal Scroll Container -->
+    <main class="scroll-wrapper">
+        <div class="scroll-container">
+            
+            <!-- Video Panel 1 -->
+            <section class="panel">
+                <div class="video-wrapper">
+                    <video autoplay loop muted playsinline class="art-video">
+                        <source src="https://assets.codepen.io/3364143/7btrrd.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="noise-overlay"></div>
+                </div>
+                <h2 class="panel-title">I. CHAOS</h2>
+            </section>
+
+            <!-- Video Panel 2 -->
+            <section class="panel">
+                <div class="video-wrapper">
+                    <!-- Placeholder using a public video URL -->
+                    <video autoplay loop muted playsinline class="art-video">
+                        <source src="https://assets.codepen.io/396624/blue-wave.mp4" type="video/mp4">
+                    </video>
+                    <div class="noise-overlay"></div>
+                </div>
+                <h2 class="panel-title">II. FLOW</h2>
+            </section>
+
+            <!-- Video Panel 3 -->
+            <section class="panel">
+                <div class="video-wrapper">
+                    <video autoplay loop muted playsinline class="art-video filter-extreme">
+                        <source src="https://assets.codepen.io/3364143/7btrrd.mp4" type="video/mp4">
+                    </video>
+                    <div class="noise-overlay"></div>
+                </div>
+                <h2 class="panel-title">III. DISTORTION</h2>
+            </section>
+            
+            <!-- Video Panel 4 (User can replace src) -->
+            <section class="panel">
+                <div class="video-wrapper">
+                    <video autoplay loop muted playsinline class="art-video filter-invert">
+                        <source src="https://assets.codepen.io/396624/blue-wave.mp4" type="video/mp4">
+                    </video>
+                    <div class="noise-overlay"></div>
+                </div>
+                <h2 class="panel-title">IV. VOID</h2>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Immersion Button -->
+    <button id="immersion-btn" class="immersion-btn">immersion</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
