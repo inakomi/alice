@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 80);
 
             // Wait for 'why' video to finish or a certain duration before revealing site
-            whyVid.addEventListener('ended', () => {
+            whyVid.addEventListener('ended', async () => {
                 const glitchReveal = document.getElementById("glitch-reveal");
                 const glitchName = document.getElementById("glitch-name");
 
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         document.body.appendChild(debugLabel);
                         setTimeout(() => debugLabel.remove(), 3000);
 
-                        schoolVid.addEventListener('ended', () => {
+                        schoolVid.addEventListener('ended', async () => {
                             const liesReveal = document.getElementById("lies-reveal");
                             const liesText = document.getElementById("lies-text");
                             
