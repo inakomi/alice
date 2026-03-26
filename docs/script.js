@@ -55,44 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // === Inline Perlin Noise ===
-    const ImprovedNoise = (function() {
-        const p = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,
-        23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,
-        125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,
-        105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,
-        135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,
-        82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,
-        153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,
-        251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,
-        106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,
-        78,66,215,61,156,180];
-        const perm = new Array(512);
-        for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
-        function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-        function lerp(t, a, b) { return a + t * (b - a); }
-        function grad(hash, x, y, z) {
-            const h = hash & 15;
-            const u = h < 8 ? x : y;
-            const v = h < 4 ? y : h === 12 || h === 14 ? x : z;
-            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
-        }
-        return {
-            noise: function(x, y, z) {
-                const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
-                x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
-                const u = fade(x), v = fade(y), w = fade(z);
-                const A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z;
-                const B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
-                return lerp(w, lerp(v, lerp(u, grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z)),
-                    lerp(u, grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z))),
-                    lerp(v, lerp(u, grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1)),
-                    lerp(u, grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1))));
-            }
-        };
-    })();
-
-    // === TERRAIN (frequency stage) ===
+    // === 3D GLOSSY OBJECT (frequency stage) ===
     const waveStage = document.getElementById("final-stage-wave");
     const terrainContainer = document.getElementById("terrain-three-container");
 
@@ -100,122 +63,78 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Promise(resolve => {
             waveStage.classList.add("active");
 
-            const worldWidth = 256, worldDepth = 256;
-            let tCamera, tScene, tRenderer, tAnimId;
+            let tCamera, tScene, tRenderer, tAnimId, tMesh;
             let tMouseX = 0, tMouseY = 0;
             const halfW = window.innerWidth / 2;
             const halfH = window.innerHeight / 2;
 
-            function onTerrainPointerMove(event) {
+            function onPointerMove(event) {
                 if (event.isPrimary === false) return;
                 tMouseX = event.clientX - halfW;
                 tMouseY = event.clientY - halfH;
             }
             terrainContainer.style.touchAction = 'none';
-            terrainContainer.addEventListener('pointermove', onTerrainPointerMove);
+            terrainContainer.addEventListener('pointermove', onPointerMove);
 
             const w = terrainContainer.clientWidth || window.innerWidth;
             const h = terrainContainer.clientHeight || window.innerHeight;
 
-            tCamera = new THREE.PerspectiveCamera(60, w / h, 1, 10000);
-            tCamera.position.set(100, 800, -800);
-            tCamera.lookAt(-100, 810, -800);
+            // Camera
+            tCamera = new THREE.PerspectiveCamera(45, w / h, 1, 80000);
+            tCamera.position.set(-600, 550, 1300);
 
+            // Scene
             tScene = new THREE.Scene();
-            tScene.background = new THREE.Color(0xefd1b5);
-            tScene.fog = new THREE.FogExp2(0xefd1b5, 0.0025);
+            tScene.background = new THREE.Color(0xAAAAAA);
 
-            // Generate heightmap with Perlin noise
-            const size = worldWidth * worldDepth;
-            const heightData = new Uint8Array(size);
-            const zSeed = Math.random() * 100;
-            let quality = 1;
-            for (let j = 0; j < 4; j++) {
-                for (let i = 0; i < size; i++) {
-                    const x = i % worldWidth, y = ~~(i / worldWidth);
-                    heightData[i] += Math.abs(ImprovedNoise.noise(x / quality, y / quality, zSeed) * quality * 1.75);
-                }
-                quality *= 5;
-            }
+            // Lights (same as teapot example)
+            const ambientLight = new THREE.AmbientLight(0x7c7c7c, 2.0);
+            tScene.add(ambientLight);
 
-            // Create terrain mesh
-            const geometry = new THREE.PlaneGeometry(7500, 7500, worldWidth - 1, worldDepth - 1);
-            geometry.rotateX(-Math.PI / 2);
-            const vertices = geometry.attributes.position.array;
-            for (let i = 0; i < size; i++) {
-                vertices[i * 3 + 1] = heightData[i] * 10;
-            }
+            const dirLight = new THREE.DirectionalLight(0xFFFFFF, 2.0);
+            dirLight.position.set(0.32, 0.39, 0.7);
+            tScene.add(dirLight);
 
-            // Generate blue/green texture via canvas
-            const texCanvas = document.createElement('canvas');
-            texCanvas.width = worldWidth;
-            texCanvas.height = worldDepth;
-            const texCtx = texCanvas.getContext('2d');
-            texCtx.fillStyle = '#000';
-            texCtx.fillRect(0, 0, worldWidth, worldDepth);
-            const imgData = texCtx.getImageData(0, 0, worldWidth, worldDepth);
-            const pixels = imgData.data;
-            const sun = new THREE.Vector3(1, 1, 1).normalize();
-            const v3 = new THREE.Vector3();
+            // Glossy object (TorusKnot - visually similar to teapot complexity)
+            const geometry = new THREE.TorusKnotGeometry(300, 80, 128, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xc0c0c0,
+                specular: 0x404040,
+                shininess: 300,
+                side: THREE.DoubleSide
+            });
+            tMesh = new THREE.Mesh(geometry, material);
+            tScene.add(tMesh);
 
-            for (let i = 0, j2 = 0; i < pixels.length; i += 4, j2++) {
-                v3.x = (heightData[j2 - 2] || 0) - (heightData[j2 + 2] || 0);
-                v3.y = 2;
-                v3.z = (heightData[j2 - worldWidth * 2] || 0) - (heightData[j2 + worldWidth * 2] || 0);
-                v3.normalize();
-                const shade = v3.dot(sun);
-                const hFactor = 0.5 + heightData[j2] * 0.007;
-                pixels[i]     = (96 + shade * 128) * hFactor;
-                pixels[i + 1] = (32 + shade * 96) * hFactor;
-                pixels[i + 2] = (shade * 96) * hFactor;
-            }
-            texCtx.putImageData(imgData, 0, 0);
-
-            const scaledCanvas = document.createElement('canvas');
-            scaledCanvas.width = worldWidth * 4;
-            scaledCanvas.height = worldDepth * 4;
-            const sCtx = scaledCanvas.getContext('2d');
-            sCtx.scale(4, 4);
-            sCtx.drawImage(texCanvas, 0, 0);
-
-            // Add subtle noise (original)
-            const sImg = sCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
-            const sPixels = sImg.data;
-            for (let ni = 0; ni < sPixels.length; ni += 4) {
-                const nv = ~~(Math.random() * 5);
-                sPixels[ni] += nv;
-                sPixels[ni + 1] += nv;
-                sPixels[ni + 2] += nv;
-            }
-            sCtx.putImageData(sImg, 0, 0);
-
-            const texture = new THREE.CanvasTexture(scaledCanvas);
-            texture.wrapS = THREE.ClampToEdgeWrapping;
-            texture.wrapT = THREE.ClampToEdgeWrapping;
-
-            const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: texture }));
-            tScene.add(mesh);
-
-            tRenderer = new THREE.WebGLRenderer({ antialias: false });
+            // Renderer
+            tRenderer = new THREE.WebGLRenderer({ antialias: true });
             tRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             tRenderer.setSize(w, h);
             terrainContainer.appendChild(tRenderer.domElement);
 
-            function terrainAnimate() {
-                tAnimId = requestAnimationFrame(terrainAnimate);
-                tCamera.position.x += (tMouseX * 0.5 - tCamera.position.x) * 0.02;
-                tCamera.position.y += (-tMouseY * 0.3 + 600 - tCamera.position.y) * 0.02;
+            function animate() {
+                tAnimId = requestAnimationFrame(animate);
+
+                // Camera follows mouse (orbit-like)
+                tCamera.position.x += (tMouseX - tCamera.position.x) * 0.05;
+                tCamera.position.y += (-tMouseY + 400 - tCamera.position.y) * 0.05;
                 tCamera.lookAt(tScene.position);
+
+                // Slow rotation
+                tMesh.rotation.y += 0.005;
+                tMesh.rotation.x += 0.002;
+
                 tRenderer.render(tScene, tCamera);
             }
-            terrainAnimate();
+            animate();
 
+            // Cleanup after duration
             setTimeout(() => {
                 if (tAnimId) cancelAnimationFrame(tAnimId);
-                terrainContainer.removeEventListener('pointermove', onTerrainPointerMove);
+                terrainContainer.removeEventListener('pointermove', onPointerMove);
                 tRenderer.dispose();
                 geometry.dispose();
-                texture.dispose();
+                material.dispose();
                 if (tRenderer.domElement && tRenderer.domElement.parentNode) {
                     tRenderer.domElement.parentNode.removeChild(tRenderer.domElement);
                 }
@@ -530,7 +449,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                                 finaleVid.pause();
                                                 setTimeout(() => {
                                                     stageCredits.classList.add("active");
-                                                    // Start the boules waves behind credits
                                                     startCreditsWaves();
                                                 }, 500);
                                             }
