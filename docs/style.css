@@ -449,8 +449,8 @@ body {
     visibility: visible;
 }
 
-/* Three.js Wave Container */
-#wave-three-container {
+/* Three.js Terrain Container */
+#terrain-three-container {
     position: absolute;
     top: 0;
     left: 0;
@@ -459,7 +459,24 @@ body {
     overflow: hidden;
 }
 
-#wave-three-container canvas {
+#terrain-three-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Credits Waves Background (boules behind text) */
+#credits-waves-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+}
+
+#credits-waves-bg canvas {
     display: block;
     width: 100%;
     height: 100%;
@@ -619,6 +636,7 @@ body {
 
 .credits-scroll {
     position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 800px;
     padding: 100px 20px;
