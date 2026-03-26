@@ -55,93 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // === 3D GLOSSY OBJECT (frequency stage) ===
-    const waveStage = document.getElementById("final-stage-wave");
-    const terrainContainer = document.getElementById("terrain-three-container");
-
-    function startWaveform(durationMs = 15000) {
-        return new Promise(resolve => {
-            waveStage.classList.add("active");
-
-            let tCamera, tScene, tRenderer, tAnimId, tMesh;
-            let tMouseX = 0, tMouseY = 0;
-            const halfW = window.innerWidth / 2;
-            const halfH = window.innerHeight / 2;
-
-            function onPointerMove(event) {
-                if (event.isPrimary === false) return;
-                tMouseX = event.clientX - halfW;
-                tMouseY = event.clientY - halfH;
-            }
-            terrainContainer.style.touchAction = 'none';
-            terrainContainer.addEventListener('pointermove', onPointerMove);
-
-            const w = terrainContainer.clientWidth || window.innerWidth;
-            const h = terrainContainer.clientHeight || window.innerHeight;
-
-            // Camera
-            tCamera = new THREE.PerspectiveCamera(45, w / h, 1, 80000);
-            tCamera.position.set(-600, 550, 1300);
-
-            // Scene
-            tScene = new THREE.Scene();
-            tScene.background = new THREE.Color(0xAAAAAA);
-
-            // Lights (same as teapot example)
-            const ambientLight = new THREE.AmbientLight(0x7c7c7c, 2.0);
-            tScene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0xFFFFFF, 2.0);
-            dirLight.position.set(0.32, 0.39, 0.7);
-            tScene.add(dirLight);
-
-            // Glossy object (TorusKnot - visually similar to teapot complexity)
-            const geometry = new THREE.TorusKnotGeometry(300, 80, 128, 32);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0xc0c0c0,
-                specular: 0x404040,
-                shininess: 300,
-                side: THREE.DoubleSide
-            });
-            tMesh = new THREE.Mesh(geometry, material);
-            tScene.add(tMesh);
-
-            // Renderer
-            tRenderer = new THREE.WebGLRenderer({ antialias: true });
-            tRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            tRenderer.setSize(w, h);
-            terrainContainer.appendChild(tRenderer.domElement);
-
-            function animate() {
-                tAnimId = requestAnimationFrame(animate);
-
-                // Camera follows mouse (orbit-like)
-                tCamera.position.x += (tMouseX - tCamera.position.x) * 0.05;
-                tCamera.position.y += (-tMouseY + 400 - tCamera.position.y) * 0.05;
-                tCamera.lookAt(tScene.position);
-
-                // Slow rotation
-                tMesh.rotation.y += 0.005;
-                tMesh.rotation.x += 0.002;
-
-                tRenderer.render(tScene, tCamera);
-            }
-            animate();
-
-            // Cleanup after duration
-            setTimeout(() => {
-                if (tAnimId) cancelAnimationFrame(tAnimId);
-                terrainContainer.removeEventListener('pointermove', onPointerMove);
-                tRenderer.dispose();
-                geometry.dispose();
-                material.dispose();
-                if (tRenderer.domElement && tRenderer.domElement.parentNode) {
-                    tRenderer.domElement.parentNode.removeChild(tRenderer.domElement);
-                }
-                waveStage.classList.remove("active");
-                resolve();
-            }, durationMs);
-        });
+    // === Frequency stage (skipped - no content) ===
+    function startWaveform(durationMs = 0) {
+        return Promise.resolve();
     }
 
     // === CREDITS WAVES BACKGROUND (boules) ===
@@ -427,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
                                         setTimeout(async () => {
-                                            await startWaveform(15000);
+                                            await startWaveform();
 
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
