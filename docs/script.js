@@ -122,8 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
             tCamera.lookAt(-100, 810, -800);
 
             tScene = new THREE.Scene();
-            tScene.background = new THREE.Color(0xb5efc4);
-            tScene.fog = new THREE.FogExp2(0xb5efc4, 0.0025);
+            tScene.background = new THREE.Color(0x0a2a1e);
+            tScene.fog = new THREE.FogExp2(0x0a2a1e, 0.001);
 
             // Generate heightmap with Perlin noise
             const size = worldWidth * worldDepth;
@@ -165,9 +165,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 v3.normalize();
                 const shade = v3.dot(sun);
                 const hFactor = 0.5 + heightData[j2] * 0.007;
-                pixels[i]     = (38 + shade * 60) * hFactor;      // R: #26..#b5 range
-                pixels[i + 1] = (84 + shade * 155) * hFactor;     // G: #54..#ef range
-                pixels[i + 2] = (113 + shade * 83) * hFactor;     // B: #71..#c4 range
+                pixels[i]     = (10 + shade * 170) * hFactor;     // R: dark → bright
+                pixels[i + 1] = (40 + shade * 200) * hFactor;     // G: #28..#ef green
+                pixels[i + 2] = (80 + shade * 120) * hFactor;     // B: #50..#c4 blue-teal
             }
             texCtx.putImageData(imgData, 0, 0);
 
