@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const waveStage = document.getElementById("final-stage-wave");
     const terrainContainer = document.getElementById("terrain-three-container");
 
-    function startWaveform(durationMs = 6000) {
+    function startWaveform(durationMs = 15000) {
         return new Promise(resolve => {
             waveStage.classList.add("active");
 
@@ -142,8 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const geometry = new THREE.PlaneGeometry(7500, 7500, worldWidth - 1, worldDepth - 1);
             geometry.rotateX(-Math.PI / 2);
             const vertices = geometry.attributes.position.array;
-            for (let i = 0, j2 = 0; i < vertices.length; i++, j2 += 3) {
-                vertices[j2 + 1] = heightData[i] * 10;
+            for (let i = 0; i < size; i++) {
+                vertices[i * 3 + 1] = heightData[i] * 10;
             }
 
             // Generate blue/green texture via canvas
@@ -497,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
                                         setTimeout(async () => {
-                                            await startWaveform(6000);
+                                            await startWaveform(15000);
 
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
