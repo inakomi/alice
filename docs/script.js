@@ -64,13 +64,120 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Waveform stage - pure CSS animation, no Web Audio API
+    // Three.js Points Waves effect (blue nuances)
     const waveStage = document.getElementById("final-stage-wave");
+    const waveContainer = document.getElementById("wave-three-container");
 
     function startWaveform(durationMs = 5200) {
         return new Promise(resolve => {
             waveStage.classList.add("active");
+
+            const SEPARATION = 100, AMOUNTX = 50, AMOUNTY = 50;
+            let waveCamera, waveScene, waveRenderer, waveParticles, waveCount = 0;
+            let waveAnimId = null;
+
+            // Setup
+            const w = waveContainer.clientWidth || window.innerWidth;
+            const h = waveContainer.clientHeight || window.innerHeight;
+
+            waveCamera = new THREE.PerspectiveCamera(75, w / h, 1, 10000);
+            waveCamera.position.set(0, 350, 800);
+            waveCamera.lookAt(0, 0, 0);
+
+            waveScene = new THREE.Scene();
+
+            const numParticles = AMOUNTX * AMOUNTY;
+            const positions = new Float32Array(numParticles * 3);
+            const colors = new Float32Array(numParticles * 3);
+            const scales = new Float32Array(numParticles);
+
+            let idx = 0, j = 0;
+            for (let ix = 0; ix < AMOUNTX; ix++) {
+                for (let iy = 0; iy < AMOUNTY; iy++) {
+                    positions[idx] = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
+                    positions[idx + 1] = 0;
+                    positions[idx + 2] = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
+                    colors[idx] = 0.0;     // R
+                    colors[idx + 1] = 0.4; // G
+                    colors[idx + 2] = 1.0; // B
+                    scales[j] = 1;
+                    idx += 3;
+                    j++;
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 6,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true
+            });
+
+            waveParticles = new THREE.Points(geometry, material);
+            waveScene.add(waveParticles);
+
+            waveRenderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+            waveRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            waveRenderer.setSize(w, h);
+            waveRenderer.setClearColor(0x000000, 0);
+            waveContainer.appendChild(waveRenderer.domElement);
+
+            function waveAnimate() {
+                waveAnimId = requestAnimationFrame(waveAnimate);
+
+                const posAttr = geometry.attributes.position;
+                const colAttr = geometry.attributes.color;
+                const posArr = posAttr.array;
+                const colArr = colAttr.array;
+
+                let i = 0, ci = 0;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        // Wave height
+                        const y = (Math.sin((ix + waveCount) * 0.3) * 50) +
+                                  (Math.sin((iy + waveCount) * 0.5) * 50);
+                        posArr[i + 1] = y;
+
+                        // Blue nuances based on height: navy → electric blue → cyan
+                        const norm = (y + 100) / 200; // normalize to 0..1
+                        colArr[ci]     = norm * 0.2;                  // R: very low
+                        colArr[ci + 1] = 0.3 + norm * 0.5;           // G: 0.3 → 0.8
+                        colArr[ci + 2] = 0.6 + norm * 0.4;           // B: 0.6 → 1.0
+
+                        i += 3;
+                        ci += 3;
+                    }
+                }
+
+                posAttr.needsUpdate = true;
+                colAttr.needsUpdate = true;
+                waveCount += 0.06;
+
+                // Slow camera orbit
+                const time = waveCount * 0.5;
+                waveCamera.position.x = Math.sin(time * 0.1) * 200;
+                waveCamera.position.y = 300 + Math.sin(time * 0.15) * 50;
+                waveCamera.lookAt(0, 0, 0);
+
+                waveRenderer.render(waveScene, waveCamera);
+            }
+
+            waveAnimate();
+
+            // Cleanup after duration
             setTimeout(() => {
+                if (waveAnimId) cancelAnimationFrame(waveAnimId);
+                waveRenderer.dispose();
+                geometry.dispose();
+                material.dispose();
+                if (waveRenderer.domElement && waveRenderer.domElement.parentNode) {
+                    waveRenderer.domElement.parentNode.removeChild(waveRenderer.domElement);
+                }
                 waveStage.classList.remove("active");
                 resolve();
             }, durationMs);
