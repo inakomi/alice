@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Promise(resolve => {
             waveStage.classList.add("active");
 
-            const worldWidth = 128, worldDepth = 128;
+            const worldWidth = 256, worldDepth = 256;
             let tCamera, tScene, tRenderer, tAnimId;
             let tMouseX = 0, tMouseY = 0;
             const halfW = window.innerWidth / 2;
@@ -122,8 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
             tCamera.lookAt(-100, 810, -800);
 
             tScene = new THREE.Scene();
-            tScene.background = new THREE.Color(0x0a2a1e);
-            tScene.fog = new THREE.FogExp2(0x0a2a1e, 0.001);
+            tScene.background = new THREE.Color(0xefd1b5);
+            tScene.fog = new THREE.FogExp2(0xefd1b5, 0.0025);
 
             // Generate heightmap with Perlin noise
             const size = worldWidth * worldDepth;
@@ -165,9 +165,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 v3.normalize();
                 const shade = v3.dot(sun);
                 const hFactor = 0.5 + heightData[j2] * 0.007;
-                pixels[i]     = (10 + shade * 170) * hFactor;     // R: dark → bright
-                pixels[i + 1] = (40 + shade * 200) * hFactor;     // G: #28..#ef green
-                pixels[i + 2] = (80 + shade * 120) * hFactor;     // B: #50..#c4 blue-teal
+                pixels[i]     = (96 + shade * 128) * hFactor;
+                pixels[i + 1] = (32 + shade * 96) * hFactor;
+                pixels[i + 2] = (shade * 96) * hFactor;
             }
             texCtx.putImageData(imgData, 0, 0);
 
@@ -177,6 +177,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const sCtx = scaledCanvas.getContext('2d');
             sCtx.scale(4, 4);
             sCtx.drawImage(texCanvas, 0, 0);
+
+            // Add subtle noise (original)
+            const sImg = sCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
+            const sPixels = sImg.data;
+            for (let ni = 0; ni < sPixels.length; ni += 4) {
+                const nv = ~~(Math.random() * 5);
+                sPixels[ni] += nv;
+                sPixels[ni + 1] += nv;
+                sPixels[ni + 2] += nv;
+            }
+            sCtx.putImageData(sImg, 0, 0);
 
             const texture = new THREE.CanvasTexture(scaledCanvas);
             texture.wrapS = THREE.ClampToEdgeWrapping;
