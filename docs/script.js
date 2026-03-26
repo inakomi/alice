@@ -64,71 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Waveform visualizer (simplified - fewer layers)
-    const waveCanvas = document.getElementById("audio-wave-canvas");
+    // Waveform stage - pure CSS animation, no Web Audio API
     const waveStage = document.getElementById("final-stage-wave");
-    let waveCtx, waveAnalyser, waveData, waveRAF, waveAudioCtx;
 
-    function initWaveForm() {
-        if (!waveCanvas || !localAudio || waveAudioCtx) return;
-        waveAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const source = waveAudioCtx.createMediaElementSource(localAudio);
-        waveAnalyser = waveAudioCtx.createAnalyser();
-        waveAnalyser.fftSize = 1024; // Reduced from 2048
-        source.connect(waveAnalyser);
-        waveAnalyser.connect(waveAudioCtx.destination);
-
-        waveData = new Uint8Array(waveAnalyser.fftSize);
-        waveCtx = waveCanvas.getContext("2d");
-
-        const rect = waveCanvas.getBoundingClientRect();
-        waveCanvas.width = rect.width;
-        waveCanvas.height = rect.height;
-    }
-
-    function startWaveform(durationMs = 9000) {
-        if (!waveCtx || !waveAnalyser) initWaveForm();
-        if (!waveCtx || !waveAnalyser) return Promise.resolve();
-
-        const w = waveCanvas.width;
-        const h = waveCanvas.height;
-
-        function draw() {
-            waveAnalyser.getByteTimeDomainData(waveData);
-            waveCtx.clearRect(0, 0, w, h);
-
-            const midY = h / 2;
-            const time = performance.now() * 0.0005;
-
-            // Simplified: only 2 layers instead of 5
-            for (let layer = 0; layer < 2; layer++) {
-                const offset = (layer - 1) * 20;
-                const alpha = 0.3 + (2 - layer) * 0.2;
-                waveCtx.strokeStyle = `rgba(160, 255, 255, ${alpha})`;
-                waveCtx.lineWidth = 2 + (2 - layer) * 1.5;
-                waveCtx.beginPath();
-                for (let i = 0; i < w; i += 8) {
-                    const idx = Math.floor((i / w) * waveData.length);
-                    const value = (waveData[idx] - 128) / 128;
-                    const wave = Math.sin(i * 0.01 + time * (0.6 + layer * 0.3)) * 20;
-                    const y = midY + value * h * 0.3 + wave + offset;
-                    if (i === 0) waveCtx.moveTo(i, y);
-                    else waveCtx.lineTo(i, y);
-                }
-                waveCtx.stroke();
-            }
-
-            waveRAF = requestAnimationFrame(draw);
-        }
-
+    function startWaveform(durationMs = 5200) {
         return new Promise(resolve => {
             waveStage.classList.add("active");
-            if (waveAudioCtx.state === "suspended") waveAudioCtx.resume();
-            draw();
             setTimeout(() => {
-                cancelAnimationFrame(waveRAF);
                 waveStage.classList.remove("active");
-                waveCtx.clearRect(0, 0, w, h);
                 resolve();
             }, durationMs);
         });
