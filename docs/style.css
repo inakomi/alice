@@ -8,46 +8,7 @@ body {
     background-color: #050505;
     color: #f1f1f1;
     font-family: 'Space Grotesk', sans-serif;
-    overflow: hidden; /* Prevent default vertical scroll on body */
-    cursor: none; /* Hide default cursor */
-}
-
-/* Custom Cursor */
-/* Custom Cursor with Cinematic Glow */
-.cursor {
-    width: 15px;
-    height: 15px;
-    background: #fff;
-    border: none;
-    border-radius: 50%;
-    position: fixed;
-    pointer-events: none;
-    z-index: 10000;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 15px #fff, 0 0 30px #3bf; /* Cinematic Blue Glow */
-    transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.cursor.hovered {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(2px);
-    border: 1px solid #fff;
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
-    pointer-events: none !important; /* Extremely important so fake cursor never blocks real clicks! */
-}
-
-.cursor-trail {
-    width: 8px;
-    height: 8px;
-    background: rgba(0, 150, 255, 0.4);
-    border-radius: 50%;
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px rgba(0, 150, 255, 0.8);
+    overflow: hidden;
 }
 
 /* Intro Cinematic Sequence */
@@ -58,7 +19,7 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: #000;
-    z-index: 5000; /* High enough to cover everything, below cursor */
+    z-index: 5000;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -94,13 +55,13 @@ body {
     z-index: 5001;
     opacity: 0;
     transition: opacity 3s ease;
-    pointer-events: none; /* Initially none, enabled when active */
+    pointer-events: none;
 }
 
 .intro-text-seq.active {
     opacity: 1;
-    pointer-events: none; /* We only want the BUTTON to receive clicks */
-    z-index: 9999; /* Higher than videos, just below cursor */
+    pointer-events: none;
+    z-index: 9999;
 }
 
 .dramatic-title {
@@ -111,7 +72,7 @@ body {
     text-align: center;
     line-height: 1;
     margin: auto;
-    pointer-events: none; /* Make sure title text itself never catches clicks instead of button */
+    pointer-events: none;
 }
 
 .dramatic-title span {
@@ -153,13 +114,12 @@ body {
 }
 
 .dramatic-title .line-2 {
-    font-size: 7vw; /* Massive, screen responsive */
+    font-size: 7vw;
     font-weight: 700;
     letter-spacing: -0.02em;
     margin: 1rem 0;
     text-transform: uppercase;
     line-height: 0.9;
-    /* adding dynamic glitch/glow */
     text-shadow: 0 0 20px rgba(255,255,255,0.2), 2px 2px 0px red, -2px -2px 0px blue;
 }
 
@@ -169,8 +129,6 @@ body {
     letter-spacing: 0.1em;
     margin-top: 1rem;
 }
-
-
 
 /* Intro Overlay (8 SECONDS) */
 .intro-overlay {
@@ -185,10 +143,7 @@ body {
     align-items: center;
     z-index: 50;
     pointer-events: none;
-    background-image: url('media/blue_jungle.png');
-    background-size: cover;
-    background-position: center;
-    /* mix-blend-mode: difference; Removed to show the image normally */
+    background: radial-gradient(ellipse at center, #0a1a3a 0%, #050505 70%);
 }
 
 .intro-overlay p {
@@ -273,7 +228,6 @@ body {
 .divert-overlay.active {
     opacity: 1;
     pointer-events: auto;
-    cursor: auto; /* Show cursor when typing */
 }
 
 .divert-text {
@@ -291,7 +245,7 @@ body {
     color: #fff;
     font-size: 4rem;
     text-align: center;
-    width: 100px; /* Only 2 chars */
+    width: 100px;
     font-family: 'Space Grotesk', sans-serif;
     outline: none;
     text-transform: uppercase;
@@ -304,13 +258,13 @@ body {
 .scroll-wrapper {
     height: 100vh;
     width: 100vw;
-    overflow-x: scroll; /* We'll hide scrollbar but keep scrollability */
+    overflow-x: scroll;
     overflow-y: hidden;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
 .scroll-wrapper::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    display: none;
 }
 
 /* Glitch Reveal after Why Video */
@@ -357,7 +311,6 @@ body {
     transition: opacity 2s ease;
     background: radial-gradient(circle at center, #0a1128 0%, #000 100%);
     overflow: hidden;
-    cursor: none;
 }
 
 .game-container.active {
@@ -368,7 +321,6 @@ body {
 #game-canvas {
     width: 100%;
     height: 100%;
-    filter: blur(2px) contrast(150%);
 }
 
 .riddle-ui {
@@ -398,7 +350,6 @@ body {
     margin-bottom: 3rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    mix-blend-mode: difference;
     animation: riddleFloat 4s infinite alternate ease-in-out;
 }
 
@@ -469,7 +420,7 @@ body {
     opacity: 0;
     pointer-events: none;
     background: #000;
-    transition: opacity 1s ease; /* Faster appearance */
+    transition: opacity 1s ease;
 }
 
 .victory-reveal.active {
@@ -490,7 +441,7 @@ body {
     text-align: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.8s ease, visibility 0.8s; /* Faster stage switching */
+    transition: opacity 0.8s ease, visibility 0.8s;
 }
 
 .final-stage.active {
@@ -505,7 +456,6 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    mix-blend-mode: screen;
 }
 
 .wave-overlay {
@@ -541,7 +491,6 @@ body {
     padding: 1.2rem 1.6rem;
     border-radius: 16px;
     background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -639,7 +588,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.2em;
     cursor: pointer;
-    backdrop-filter: blur(5px);
     transition: all 0.3s ease;
 }
 
@@ -657,7 +605,7 @@ body {
 }
 
 .final-stage#final-stage-credits {
-    justify-content: flex-start; /* For scrolling from bottom */
+    justify-content: flex-start;
     overflow-y: hidden;
     height: 100vh;
 }
@@ -674,7 +622,7 @@ body {
 }
 
 .final-stage.active .credits-scroll {
-    animation: creditsMove 200s linear forwards; /* Much slower roll */
+    animation: creditsMove 200s linear forwards;
 }
 
 .credits-title {
@@ -716,7 +664,7 @@ body {
 
 @keyframes creditsMove {
     0% { transform: translateY(100vh); }
-    100% { transform: translateY(-3000px); } /* Adjust based on text length */
+    100% { transform: translateY(-3000px); }
 }
 
 /* Immersion Button */
@@ -734,7 +682,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.2em;
     cursor: pointer;
-    backdrop-filter: blur(5px);
     transition: all 0.3s ease;
 }
 
@@ -751,7 +698,7 @@ body {
 .scroll-container {
     display: flex;
     height: 100vh;
-    width: max-content; /* expands based on content */
+    width: max-content;
 }
 
 /* Panels */
@@ -785,45 +732,74 @@ body {
 }
 
 .panel:hover .video-wrapper {
-    transform: scale(1.05); /* "Crazy" minimal interactiveness */
+    transform: scale(1.05);
 }
 
-.art-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: grayscale(100%) contrast(150%);
-    transition: filter 0.5s ease;
+/* CSS Animated Panel Backgrounds (replacing heavy external videos) */
+.panel-bg-chaos {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 25%, #0a1a3a 50%, #1a0a2e 75%, #0a0a0a 100%);
+    background-size: 400% 400%;
+    animation: chaosShift 8s ease infinite;
 }
 
-/* Specific Video Filters for variety */
-.filter-extreme {
-    filter: sepia(100%) hue-rotate(90deg) saturate(300%);
+.panel-bg-flow {
+    background: linear-gradient(180deg, #000814 0%, #001d3d 30%, #003566 60%, #001d3d 100%);
+    background-size: 100% 300%;
+    animation: flowShift 6s ease-in-out infinite alternate;
 }
 
-.filter-invert {
-    filter: invert(100%) contrast(150%);
+.panel-bg-distortion {
+    background: linear-gradient(45deg, #0d0d0d 0%, #1a0a3a 20%, #3a0a3a 50%, #0a2a3a 80%, #0d0d0d 100%);
+    background-size: 400% 400%;
+    animation: distortionShift 10s ease infinite;
+    filter: contrast(150%);
 }
 
-.panel:hover .art-video {
-    filter: grayscale(0%) contrast(120%) saturate(150%);
+.panel-bg-void {
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 50%, #050510 100%);
+    background-size: 200% 200%;
+    animation: voidPulse 4s ease-in-out infinite alternate;
 }
 
-.panel:hover .filter-extreme,
-.panel:hover .filter-invert {
-    filter: none; /* Normal video state on hover */
+@keyframes chaosShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-/* Static Noise Overlay */
+@keyframes flowShift {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 0% 100%; }
+}
+
+@keyframes distortionShift {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+@keyframes voidPulse {
+    0% { background-size: 200% 200%; }
+    100% { background-size: 150% 150%; }
+}
+
+/* Static Noise Overlay - simplified, no SVG filter */
 .noise-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
-    opacity: 0.15;
+    opacity: 0.08;
     pointer-events: none;
     z-index: 5;
-    mix-blend-mode: overlay;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.03) 2px,
+        rgba(255,255,255,0.03) 4px
+    );
 }

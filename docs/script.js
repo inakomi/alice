@@ -3,21 +3,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const introCinematic = document.getElementById("intro-cinematic");
     const introVid1 = document.getElementById("intro-vid-1");
     const introTextSeq = document.getElementById("intro-text-seq");
-    const takeChainsBtn = document.getElementById("take-chains-btn");
     const localAudio = document.getElementById("local-audio");
-
 
     // Start video 1
     if (introVid1) {
         introVid1.addEventListener("ended", () => {
-            // Video ended normally without spacebar, show text.
             introTextSeq.classList.add("active");
         });
     }
 
-    let canPressSpacebar = true; // Let user press spacebar IMMEDIATELY!
+    let canPressSpacebar = true;
 
-    // Helper to play a video reliably (handles autoplay restrictions and errors)
+    // Helper to play a video reliably
     const loadingOverlay = document.getElementById("loading-overlay");
     const loadingText = document.getElementById("loading-text");
 
@@ -34,6 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
         loadingOverlay.style.pointerEvents = "none";
     }
 
+    // Lazy-load video source only when needed
+    function loadVideoSrc(video, src) {
+        if (video && !video.src.includes(src)) {
+            video.src = src;
+            video.load();
+        }
+    }
+
     async function safePlay(video, { mute = true, label = "video" } = {}) {
         if (!video) return;
         showLoading(`Starting ${label}...`);
@@ -41,15 +46,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             video.muted = mute;
             video.currentTime = 0;
-            video.load();
             const promise = video.play();
-
             if (promise && promise.catch) {
                 await promise.catch(err => {
                     console.warn(`safePlay ${label} rejected`, err);
                 });
             }
-
             if (!mute) {
                 setTimeout(() => {
                     try { video.muted = false; } catch (e) { }
@@ -62,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Waveform visualizer (before the finale video)
+    // Waveform visualizer (simplified - fewer layers)
     const waveCanvas = document.getElementById("audio-wave-canvas");
     const waveStage = document.getElementById("final-stage-wave");
     let waveCtx, waveAnalyser, waveData, waveRAF, waveAudioCtx;
@@ -72,75 +74,44 @@ document.addEventListener("DOMContentLoaded", () => {
         waveAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = waveAudioCtx.createMediaElementSource(localAudio);
         waveAnalyser = waveAudioCtx.createAnalyser();
-        waveAnalyser.fftSize = 2048;
+        waveAnalyser.fftSize = 1024; // Reduced from 2048
         source.connect(waveAnalyser);
         waveAnalyser.connect(waveAudioCtx.destination);
 
         waveData = new Uint8Array(waveAnalyser.fftSize);
         waveCtx = waveCanvas.getContext("2d");
 
-        function resize() {
-            const rect = waveCanvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            waveCanvas.width = rect.width * dpr;
-            waveCanvas.height = rect.height * dpr;
-            waveCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-        resize();
-        window.addEventListener("resize", resize);
+        const rect = waveCanvas.getBoundingClientRect();
+        waveCanvas.width = rect.width;
+        waveCanvas.height = rect.height;
     }
 
     function startWaveform(durationMs = 9000) {
         if (!waveCtx || !waveAnalyser) initWaveForm();
         if (!waveCtx || !waveAnalyser) return Promise.resolve();
 
-        waveAnalyser.getByteTimeDomainData(waveData);
-
-        const w = waveCanvas.clientWidth;
-        const h = waveCanvas.clientHeight;
-
-        // Keep a small buffer of past samples for smoother motion
-        const history = new Array(60).fill(0);
-        let historyIdx = 0;
+        const w = waveCanvas.width;
+        const h = waveCanvas.height;
 
         function draw() {
             waveAnalyser.getByteTimeDomainData(waveData);
-
-            // Smooth the waveform by averaging nearby samples
-            for (let i = 0; i < waveData.length; i += 16) {
-                const base = waveData[i];
-                history[historyIdx] = base;
-                historyIdx = (historyIdx + 1) % history.length;
-            }
-
-            const avg = history.reduce((sum, v) => sum + v, 0) / history.length;
-            const bass = (avg - 128) / 128;
-
             waveCtx.clearRect(0, 0, w, h);
 
-            const gradient = waveCtx.createLinearGradient(0, 0, w, h);
-            gradient.addColorStop(0, "rgba(0, 230, 255, 0.15)");
-            gradient.addColorStop(0.5, "rgba(60, 80, 220, 0.25)");
-            gradient.addColorStop(1, "rgba(160, 0, 255, 0.15)");
-            waveCtx.fillStyle = gradient;
-            waveCtx.fillRect(0, 0, w, h);
-
             const midY = h / 2;
-            const amp = h * (0.2 + Math.abs(bass) * 0.25);
-
             const time = performance.now() * 0.0005;
 
-            for (let layer = 0; layer < 5; layer++) {
-                const offset = (layer - 2) * 18;
-                const alpha = 0.12 + (5 - layer) * 0.14;
+            // Simplified: only 2 layers instead of 5
+            for (let layer = 0; layer < 2; layer++) {
+                const offset = (layer - 1) * 20;
+                const alpha = 0.3 + (2 - layer) * 0.2;
                 waveCtx.strokeStyle = `rgba(160, 255, 255, ${alpha})`;
-                waveCtx.lineWidth = 1 + (5 - layer) * 1.2;
+                waveCtx.lineWidth = 2 + (2 - layer) * 1.5;
                 waveCtx.beginPath();
-                for (let i = 0; i < w; i += 6) {
+                for (let i = 0; i < w; i += 8) {
                     const idx = Math.floor((i / w) * waveData.length);
                     const value = (waveData[idx] - 128) / 128;
-                    const wave = Math.sin(i * 0.01 + time * (0.6 + layer * 0.2)) * 18;
-                    const y = midY + value * amp + wave + offset * Math.sin(time * 0.5 + layer);
+                    const wave = Math.sin(i * 0.01 + time * (0.6 + layer * 0.3)) * 20;
+                    const y = midY + value * h * 0.3 + wave + offset;
                     if (i === 0) waveCtx.moveTo(i, y);
                     else waveCtx.lineTo(i, y);
                 }
@@ -166,118 +137,83 @@ document.addEventListener("DOMContentLoaded", () => {
     // Spacebar logic
     document.addEventListener("keydown", async (e) => {
         if (e.code === "Space" && canPressSpacebar) {
-            canPressSpacebar = false; // Prevent multiple triggers
-            console.log("Spacebar pressed: take away constraints");
-            
+            canPressSpacebar = false;
+
             const whyVid = document.getElementById("why-vid");
-            
-            // Hide intro elements and stop first video if still playing!
+
             if (introVid1) {
                 introVid1.pause();
                 introVid1.classList.remove("active");
             }
             introTextSeq.classList.remove("active");
-            if (takeChainsBtn) {
-                takeChainsBtn.classList.remove("show");
-                takeChainsBtn.style.display = "none";
-            }
 
-            // Start 'why' video with sound
+            // Lazy-load WHY video
+            loadVideoSrc(whyVid, "media/why.mp4");
             whyVid.classList.add("active");
-            whyVid.volume = 1.0; 
-            
-            // Re-load and play to ensure no freeze
+            whyVid.volume = 1.0;
             await safePlay(whyVid, { mute: false, label: 'WHY video' });
 
-            // Start Audio Fade In logic (Very slow transition)
+            // Start Audio Fade In
             localAudio.volume = 0;
             localAudio.play().catch(e => console.log("Audio play error:", e));
-            
+
             let vol = 0;
             const fadeInterval = setInterval(() => {
                 if (vol < 1) {
-                    vol += 0.01;
+                    vol += 0.02; // Faster fade (was 0.01)
                     localAudio.volume = Math.max(0, Math.min(vol, 1));
                 } else {
                     clearInterval(fadeInterval);
                 }
             }, 80);
 
-            // Wait for 'why' video to finish or a certain duration before revealing site
             whyVid.addEventListener('ended', async () => {
                 const glitchReveal = document.getElementById("glitch-reveal");
                 const glitchName = document.getElementById("glitch-name");
 
-                // Show ALICE
                 glitchReveal.classList.add("active");
                 whyVid.classList.remove("active");
 
-                // After 2 seconds, glitch into INES
                 setTimeout(() => {
                     glitchName.innerText = "INES";
                     glitchName.setAttribute("data-text", "INES");
-                    
-                    // Stay on INES for 2 seconds then fade out to show school video
+
                     setTimeout(async () => {
                         glitchReveal.classList.remove("active");
-                        
+
                         const schoolVid = document.getElementById("school-vid");
-                        // Reset other videos just in case
                         whyVid.classList.remove("active");
                         whyVid.pause();
 
-                        // Ensure school video is ready to play
-                        schoolVid.muted = true;
-                        schoolVid.playsInline = true;
-                        schoolVid.currentTime = 0;
-                        schoolVid.style.visibility = "visible";
-
+                        // Lazy-load SCHOOL video
+                        loadVideoSrc(schoolVid, "media/school.mp4");
                         schoolVid.classList.add("active");
                         await safePlay(schoolVid, { mute: true, label: 'SCHOOL video' });
 
-                        // Optional debug overlay (will show briefly)
-                        const debugLabel = document.createElement("div");
-                        debugLabel.textContent = "SCHOOL VIDEO";
-                        debugLabel.style.position = "absolute";
-                        debugLabel.style.top = "1rem";
-                        debugLabel.style.left = "1rem";
-                        debugLabel.style.padding = "0.25rem 0.5rem";
-                        debugLabel.style.background = "rgba(0,0,0,0.6)";
-                        debugLabel.style.color = "#fff";
-                        debugLabel.style.zIndex = "6000";
-                        document.body.appendChild(debugLabel);
-                        setTimeout(() => debugLabel.remove(), 3000);
-
                         schoolVid.addEventListener('ended', async () => {
                             const liesReveal = document.getElementById("lies-reveal");
-                            const liesText = document.getElementById("lies-text");
-                            
                             schoolVid.classList.remove("active");
                             liesReveal.classList.add("active");
 
-                            // Wait 5 seconds on the white text then show craycray video
                             setTimeout(async () => {
                                 liesReveal.classList.remove("active");
-                                
+
                                 const craycrayVid = document.getElementById("craycray-vid");
-                                // Ensure school vid is fully gone
                                 schoolVid.classList.remove("active");
                                 schoolVid.pause();
 
+                                // Lazy-load CRAYCRAY video
+                                loadVideoSrc(craycrayVid, "media/craycray.mp4");
                                 craycrayVid.classList.add("active");
                                 await safePlay(craycrayVid, { mute: true, label: 'CRAYCRAY video' });
 
-                                // Séquence terminée : on s'arrête là après la vidéo
                                 craycrayVid.addEventListener('ended', () => {
-                                    // Start the Alice Game after craycray ends
                                     startAliceGame();
                                 });
-
                             }, 5000);
                         });
 
                     }, 2000);
-
                 }, 2000);
             });
         }
@@ -287,25 +223,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const skipBtn = document.getElementById("skip-btn");
     if (skipBtn) {
         skipBtn.addEventListener("click", () => {
-            console.log("Button clicked: SKIP INTRO");
-            // Stop all videos
             const allIntroVids = document.querySelectorAll(".intro-video");
             allIntroVids.forEach(v => {
                 v.pause();
                 v.classList.remove("active");
             });
-            
-            // Hide other intro elements
+
             introTextSeq.classList.remove("active");
-            const glitchReveal = document.getElementById("glitch-reveal");
-            const liesReveal = document.getElementById("lies-reveal");
-            glitchReveal.classList.remove("active");
-            liesReveal.classList.remove("active");
-            
-            // Hide skip button itself
+            document.getElementById("glitch-reveal").classList.remove("active");
+            document.getElementById("lies-reveal").classList.remove("active");
             skipBtn.style.display = "none";
 
-            // Start the game
             startAliceGame();
         });
     }
@@ -319,23 +247,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
         gameContainer.classList.add("active");
         document.getElementById("skip-btn").style.display = "none";
-        
-        // Background particles effect
+
+        // Simplified particles: fewer particles, lower frequency
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         let particles = [];
-        for(let i=0; i<80; i++) {
+        for (let i = 0; i < 30; i++) { // Reduced from 80 to 30
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 size: Math.random() * 2,
-                speed: 0.5 + Math.random() * 1.5,
-                opacity: Math.random() * 0.5
+                speed: 0.5 + Math.random() * 1,
+                opacity: Math.random() * 0.4
             });
         }
 
+        let particleRAF;
         function drawBackground() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             particles.forEach(p => {
                 p.y += p.speed;
@@ -343,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ctx.fillStyle = `rgba(100, 200, 255, ${p.opacity})`;
                 ctx.fillRect(p.x, p.y, p.size, p.size);
             });
-            requestAnimationFrame(drawBackground);
+            particleRAF = requestAnimationFrame(drawBackground);
         }
         drawBackground();
 
@@ -355,10 +284,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.key === "Enter") {
                 const val = riddleInput.value.toLowerCase().trim();
                 if (val === "alice") {
-                    // Correct!
                     riddleInput.style.color = "#0f0";
                     riddleInput.disabled = true;
-                    
+                    // Stop particles when game solved
+                    if (particleRAF) cancelAnimationFrame(particleRAF);
+
                     const victoryReveal = document.getElementById("victory-reveal");
                     const riddleUi = document.getElementById("riddle-ui");
                     const stage1 = document.getElementById("final-stage-1");
@@ -366,92 +296,81 @@ document.addEventListener("DOMContentLoaded", () => {
                     const stage3 = document.getElementById("final-stage-3");
                     const btnReplay = document.getElementById("btn-replay");
                     const btnStop = document.getElementById("btn-stop");
-                    
-                    // Fade out riddle
+
                     riddleUi.style.opacity = "0";
                     setTimeout(() => {
                         riddleUi.style.display = "none";
                         victoryReveal.classList.add("active");
-                        
-                        // Stage 1: Bold Revelation (Wait 3s instead of 5s)
+
                         setTimeout(() => {
                             stage1.classList.remove("active");
-                            // Wait briefly before Stage 2
                             setTimeout(() => {
                                 stage2.classList.add("active");
-                            }, 500); // reduced from 1000
-                        }, 3000); // reduced from 5000
-                    }, 1000); // reduced from 2000
+                            }, 500);
+                        }, 3000);
+                    }, 1000);
 
-                    // Handle Choices - Both lead to the same inevitable path
                     const triggerFinalInversion = () => {
                         stage2.classList.remove("active");
                         setTimeout(() => {
                             const stageDots = document.getElementById("final-stage-dots");
                             stageDots.classList.add("active");
-                            
+
                             setTimeout(() => {
                                 stageDots.classList.remove("active");
                                 setTimeout(() => {
                                     stage3.classList.add("active");
-                                    
-                                    // NEW: Finale Video and Credits
+
                                     setTimeout(() => {
                                         stage3.classList.remove("active");
                                         setTimeout(async () => {
-                                            // Show waveform animation that reacts to the audio
                                             await startWaveform(5200);
 
                                             const stageFinale = document.getElementById("final-stage-finale");
                                             const finaleVid = document.getElementById("finale-vid");
                                             const stageCredits = document.getElementById("final-stage-credits");
 
+                                            // Lazy-load FINALE video
+                                            loadVideoSrc(finaleVid, "media/finale.mp4");
                                             stageFinale.classList.add("active");
 
-                                            // Handle Audio logic for finale
                                             if (!localAudio.paused && localAudio.volume > 0) {
                                                 finaleVid.muted = true;
                                             } else {
                                                 finaleVid.muted = false;
                                             }
 
-// Preload and play reliably
-                                                await safePlay(finaleVid, { mute: finaleVid.muted, label: 'Finale video' });
+                                            await safePlay(finaleVid, { mute: finaleVid.muted, label: 'Finale video' });
 
                                             function showCredits() {
                                                 stageFinale.classList.remove("active");
                                                 finaleVid.pause();
                                                 setTimeout(() => {
                                                     stageCredits.classList.add("active");
-                                                }, 500); // reduced from 1000
+                                                }, 500);
                                             }
 
                                             finaleVid.onended = showCredits;
-
-                                            // Safety: if video is longer than 2 mins or freezes
                                             setTimeout(() => {
                                                 if (!stageCredits.classList.contains("active")) {
                                                     showCredits();
                                                 }
-                                            }, 60000); // 1 minute safety cap
+                                            }, 60000);
 
-                                        }, 500); // reduced from 1000
-                                    }, 4000); // Philosophy stays for 4s instead of 6s
-
-                                }, 500); // reduced from 1000
-                            }, 2000); // Wait 2 seconds on the dots instead of 3
-                        }, 500); // reduced from 1000
+                                        }, 500);
+                                    }, 4000);
+                                }, 500);
+                            }, 2000);
+                        }, 500);
                     };
 
-                    btnReplay.onclick = () => { console.log("Button clicked: we play another guessing"); triggerFinalInversion(); };
-                    btnStop.onclick = () => { console.log("Button clicked: we stop"); triggerFinalInversion(); };
+                    btnReplay.onclick = () => triggerFinalInversion();
+                    btnStop.onclick = () => triggerFinalInversion();
 
                 } else {
-                    // Wrong!
                     mistakes++;
                     riddleInput.value = "";
                     addTickingMessage();
-                    // Shake effect
                     riddleInput.style.transform = "translateX(10px)";
                     setTimeout(() => riddleInput.style.transform = "translateX(-10px)", 50);
                     setTimeout(() => riddleInput.style.transform = "translateX(0)", 100);
@@ -467,8 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
             msg.style.top = Math.random() * 80 + 10 + "%";
             msg.style.fontSize = (0.5 + Math.random() * 1) + "rem";
             tickingContainer.appendChild(msg);
-            
-            // Randomly flash blue background on mistake
+
             gameContainer.style.background = "radial-gradient(circle at center, #003366 0%, #000 100%)";
             setTimeout(() => {
                 gameContainer.style.background = "radial-gradient(circle at center, #0a1128 0%, #000 100%)";
@@ -487,55 +405,13 @@ document.addEventListener("DOMContentLoaded", () => {
             isUnlocked = true;
             divertOverlay.classList.remove("active");
             e.target.blur();
-            e.target.value = ""; // clear input
+            e.target.value = "";
         }
     });
 
-    // 1. Custom Cursor & Cinematic Trail Logic
-    const cursor = document.querySelector(".cursor");
-    const trail = document.createElement("div");
-    trail.className = "cursor-trail";
-    document.body.appendChild(trail);
-
-    let mouseX = 0, mouseY = 0;
-    let trailX = 0, trailY = 0;
-    let cursorX = 0, cursorY = 0;
-
-    document.addEventListener("mousemove", (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-
-    // Smooth animation for both cursor and trail
-    function animateMouse() {
-        // Cursor follows immediately but with a tiny bit of smoothing for 'liquid' feel
-        cursorX += (mouseX - cursorX) * 0.8;
-        cursorY += (mouseY - cursorY) * 0.8;
-        
-        // Trail follows much slower
-        trailX += (mouseX - trailX) * 0.1;
-        trailY += (mouseY - trailY) * 0.1;
-        
-        cursor.style.left = cursorX + "px";
-        cursor.style.top = cursorY + "px";
-        trail.style.left = trailX + "px";
-        trail.style.top = trailY + "px";
-        
-        requestAnimationFrame(animateMouse);
-    }
-    animateMouse();
-
-    // Hover Effects on interactive/large visual elements
-    const hoverElements = document.querySelectorAll(".video-wrapper, .glitch, #take-chains-btn");
-    hoverElements.forEach(el => {
-        el.addEventListener("mouseenter", () => cursor.classList.add("hovered"));
-        el.addEventListener("mouseleave", () => cursor.classList.remove("hovered"));
-    });
-
-    // 3. Immersion (Fullscreen) Logic
+    // 2. Immersion (Fullscreen) Logic
     const immersionBtn = document.getElementById("immersion-btn");
     immersionBtn.addEventListener("click", () => {
-        console.log("Button clicked: immersion");
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
                 console.log(`Error attempting to enable full-screen mode: ${err.message}`);
@@ -545,13 +421,12 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => immersionBtn.remove(), 500);
     });
 
-    // 2. Horizontal Scroll Magic
+    // 3. Horizontal Scroll Magic
     const scrollWrapper = document.querySelector(".scroll-wrapper");
 
-    // Translate vertical scroll wheel into horizontal scrolling
     scrollWrapper.addEventListener("wheel", (evt) => {
         evt.preventDefault();
-        
+
         if (!hasDiverted) {
             hasDiverted = true;
             divertOverlay.classList.add("active");
@@ -561,12 +436,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!isUnlocked) {
-            return; // Block scroll until unlocked
-        }
+        if (!isUnlocked) return;
 
-        // Adjust the multiplier for scroll speed/smoothness
-        // The deltaY provides the vertical scroll amount, we apply it horizontally
-        scrollWrapper.scrollLeft += evt.deltaY * 2.0; 
-    }, { passive: false }); // explicit non-passive to allow preventDefault
+        scrollWrapper.scrollLeft += evt.deltaY * 2.0;
+    }, { passive: false });
 });

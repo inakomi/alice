@@ -9,14 +9,15 @@
 </head>
 <body>
     <!-- Hidden Audio Player -->
-    <audio id="local-audio" src="media/song.mp3" loop preload="auto"></audio>
+    <audio id="local-audio" src="media/song.mp3" loop preload="none"></audio>
 
     <!-- Intro Cinematic Sequence -->
     <div id="intro-cinematic" class="intro-cinematic">
         <video id="intro-vid-1" class="intro-video active" src="media/intro.mp4" playsinline webkit-playsinline muted autoplay preload="auto"></video>
-        <video id="why-vid" class="intro-video" src="media/why.mp4" playsinline webkit-playsinline preload="auto"></video>
-        <video id="school-vid" class="intro-video" src="media/school.mp4" playsinline webkit-playsinline muted preload="auto"></video>
-        <video id="craycray-vid" class="intro-video" src="media/craycray.mp4" playsinline webkit-playsinline muted preload="auto"></video>
+        <!-- These videos are loaded on-demand by JS, not preloaded -->
+        <video id="why-vid" class="intro-video" playsinline webkit-playsinline preload="none"></video>
+        <video id="school-vid" class="intro-video" playsinline webkit-playsinline muted preload="none"></video>
+        <video id="craycray-vid" class="intro-video" playsinline webkit-playsinline muted preload="none"></video>
         
         <!-- Glitch Reveal Text -->
         <div id="glitch-reveal" class="glitch-reveal">
@@ -74,7 +75,7 @@
                 </div>
 
                 <div id="final-stage-finale" class="final-stage">
-                    <video id="finale-vid" class="finale-video" src="media/finale.mp4" playsinline muted></video>
+                    <video id="finale-vid" class="finale-video" playsinline muted preload="none"></video>
                 </div>
 
                 <div id="final-stage-credits" class="final-stage">
@@ -128,9 +129,6 @@
         </div>
     </div>
 
-    <!-- Custom Cursor -->
-    <div class="cursor"></div>
-
     <!-- Intro Text Overlay -->
     <div class="intro-overlay">
         <h1 class="glitch" data-text="8 SECONDS">8 SECONDS</h1>
@@ -148,13 +146,9 @@
     <main class="scroll-wrapper">
         <div class="scroll-container">
             
-            <!-- Video Panel 1 -->
+            <!-- Video Panel 1 - CSS gradient instead of external video -->
             <section class="panel">
-                <div class="video-wrapper">
-                    <video autoplay loop muted playsinline class="art-video">
-                        <source src="https://assets.codepen.io/3364143/7btrrd.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
+                <div class="video-wrapper panel-bg-chaos">
                     <div class="noise-overlay"></div>
                 </div>
                 <h2 class="panel-title">I. CHAOS</h2>
@@ -162,11 +156,7 @@
 
             <!-- Video Panel 2 -->
             <section class="panel">
-                <div class="video-wrapper">
-                    <!-- Placeholder using a public video URL -->
-                    <video autoplay loop muted playsinline class="art-video">
-                        <source src="https://assets.codepen.io/396624/blue-wave.mp4" type="video/mp4">
-                    </video>
+                <div class="video-wrapper panel-bg-flow">
                     <div class="noise-overlay"></div>
                 </div>
                 <h2 class="panel-title">II. FLOW</h2>
@@ -174,21 +164,15 @@
 
             <!-- Video Panel 3 -->
             <section class="panel">
-                <div class="video-wrapper">
-                    <video autoplay loop muted playsinline class="art-video filter-extreme">
-                        <source src="https://assets.codepen.io/3364143/7btrrd.mp4" type="video/mp4">
-                    </video>
+                <div class="video-wrapper panel-bg-distortion">
                     <div class="noise-overlay"></div>
                 </div>
                 <h2 class="panel-title">III. DISTORTION</h2>
             </section>
             
-            <!-- Video Panel 4 (User can replace src) -->
+            <!-- Video Panel 4 -->
             <section class="panel">
-                <div class="video-wrapper">
-                    <video autoplay loop muted playsinline class="art-video filter-invert">
-                        <source src="https://assets.codepen.io/396624/blue-wave.mp4" type="video/mp4">
-                    </video>
+                <div class="video-wrapper panel-bg-void">
                     <div class="noise-overlay"></div>
                 </div>
                 <h2 class="panel-title">IV. VOID</h2>
